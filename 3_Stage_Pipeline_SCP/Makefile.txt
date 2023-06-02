@@ -1,0 +1,39 @@
+verilator   ?= verilator
+ver-library     ?= obj_dir
+defines     ?=
+# default command line arguments
+imem        ?= imem.txt
+max_cycles      ?= 1000000
+vcd         ?= 0
+#uartbuild_root := software/example-uart/build/
+src := $(wildcard *.sv)
+incdir  :=  Computer-Architecture/3_Stage_Pipeline_SCP
+list_incdir := $(foreach dir, ${incdir}, +incdir+$(dir))
+verilate_command := $(verilator) +define+$(defines)                 \
+                    --cc $(src) $(list_incdir)      \
+                    --top-module datapath          \
+                    -Wno-TIMESCALEMOD           \
+                    -Wno-MULTIDRIVEN            \
+                    -Wno-CASEOVERLAP            \
+                    -Wno-WIDTH              \
+                    -Wno-UNOPTFLAT              \
+                    -Wno-LATCH              \
+                    -Wno-IMPLICIT               \
+                    -Wno-fatal                          \
+                                -Wno-PINCONNECTEMPTY                \
+                                -Wno-ASSIGNDLY                          \
+                                -Wno-DECLFILENAME                   \
+                                -Wno-UNUSED   \
+                                -Wno-CASEINCOMPLETE                     \
+                                -Wno-BLKANDNBLK                     \
+                                -Wno-style                              \
+                    --Mdir $(ver-library)           \
+                    --exe testbench.cpp        \
+                    --trace-structs --trace
+verilate:
+	@echo "Loading Verilator"
+	$(verilate_command)
+	cd $(ver-library) && $(MAKE) -f Vdatapath.mk
+sim-verilate: verilate
+	@echo "Running example program"
+	$(ver-library)/Vdatapath +imem=$(imem) +max_cycles=$(max_cycles) +vcd=$(vcd)$(verilate_command)
